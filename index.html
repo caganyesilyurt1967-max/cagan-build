@@ -66,7 +66,7 @@
     padding-bottom: 4px;
   }
 
-  /* Cihaz Seçim Ekranı Stilleri (YENİ) */
+  /* Cihaz Seçim Ekranı Stilleri */
   #device-selection-overlay {
     position: fixed;
     top: 0;
@@ -191,8 +191,9 @@
    - Cagan Build Branding (Title, Copyright)
    - Adjusted balance for easier start (NEW)
    - Continuous Income and Task System (NEW)
-   // Düzeltme 1: PC'de sürükleme/tıklama ayrımı yapıldı (isDraggingPC)
-   // Düzeltme 2: Kaynak kaybını önlemek için üretim ve oto-satış mantığı düzeltildi
+   - Düzeltme 1: PC'de sürükleme/tıklama ayrımı yapıldı (isDraggingPC)
+   - Düzeltme 2: Kaynak kaybını önlemek için üretim ve oto-satış mantığı düzeltildi
+   - **Düzeltme 3: Mobil dokunma/sürükleme ayrımı, toplam mesafe kontrolü ile sağlandı (touchStartAbsX/Y)**
 */
 
 /* CONFIG */
@@ -420,7 +421,7 @@ function recomputeEfficiency(){
 }
 function recomputeAll(){ recomputeAccess(); recomputeHappiness(); recomputeEfficiency(); }
 
-/* Tick: production, auto-sell, depot overflow, tax, growth (Düzeltilmiş Oto-Satış Mantığı) */
+/* Tick: production, auto-sell, depot overflow, tax, growth (Aynı) */
 function tick(){
   state.time.tick++; state.time.seasonTick++;
   if (state.time.seasonTick > 24){ state.time.seasonTick = 0; state.time.season = nextSeason(state.time.season); }
@@ -1093,8 +1094,11 @@ function drawIcon(ctxD, cx, cy, type, w, h){
 
 function tRand(n){ return Math.random()*n; }
 
-/* Input handling (Düzeltildi: PC sürükleme/tıklama ayrımı) */
+/* Input handling (Düzeltildi: PC sürükleme/tıklama ayrımı ve Mobil dokunma/sürükleme ayrımı) */
 let mouse = {x:0,y:0,canvasX:0,canvasY:0}, mouseOnCanvas=false, hoverTile=null, touchMoved = false, isDraggingPC = false;
+// FIX: Mobil dokunma/sürükleme ayrımı için yeni değişkenler ve eşik
+let touchStartAbsX = 0, touchStartAbsY = 0; 
+const MOBILE_TAP_THRESHOLD = 10; // Piksel eşiği
 
 // Mouse Wheel for Zoom (PC)
 canvas.addEventListener('wheel', e => { 
@@ -1110,7 +1114,7 @@ canvas.addEventListener('mousedown', e => {
     state.pan.active = true; 
     state.pan.startX = e.clientX; 
     state.pan.startY = e.clientY; 
-    isDraggingPC = false; // Tıklama başlangıcında sürükleme yok say
+    isDraggingPC = false; 
 });
 canvas.addEventListener('mouseup', () => { 
     if (state.device.isMobile) return;
@@ -1134,7 +1138,6 @@ canvas.addEventListener('mousemove', e => {
         state.pan.y += dy;
         state.pan.startX = e.clientX;
         state.pan.startY = e.clientY;
-        // Eğer fare 3 pikselden fazla hareket ettiyse, sürükleme yapılıyor demektir
         if (Math.abs(dx) > 3 || Math.abs(dy) > 3) isDraggingPC = true;
         mouseOnCanvas = false;
         hoverTile = null;
@@ -1162,7 +1165,7 @@ canvas.addEventListener('mousemove', e => {
 canvas.addEventListener('click', e => {
     if (state.device.isMobile) return; // Sadece PC'de aktif
     if (isDraggingPC) { 
-        isDraggingPC = false; // Sürükleme yapıldıysa tıklama işlemini iptal et ve bayrağı sıfırla
+        isDraggingPC = false; 
         return; 
     } 
 
@@ -1201,11 +1204,15 @@ canvas.addEventListener('touchstart', e => {
         state.pan.active = true;
         state.pan.startX = e.touches[0].clientX;
         state.pan.startY = e.touches[0].clientY;
+        // FIX: Mutlak başlangıç koordinatlarını kaydet
+        touchStartAbsX = e.touches[0].clientX;
+        touchStartAbsY = e.touches[0].clientY;
     } else if (e.touches.length === 2) { // Zoom (İki parmak / Pinch)
         state.pan.active = false;
         const dx = e.touches[0].clientX - e.touches[1].clientX;
         const dy = e.touches[0].clientY - e.touches[1].clientY;
         state.pinch.distance = Math.hypot(dx, dy);
+        touchMoved = true; // İki parmak hareketi her zaman kaydırma/yakınlaştırma demektir
     }
     e.preventDefault(); 
 });
@@ -1219,7 +1226,7 @@ canvas.addEventListener('touchmove', e => {
         state.pan.y += dy;
         state.pan.startX = e.touches[0].clientX;
         state.pan.startY = e.touches[0].clientY;
-        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) touchMoved = true; 
+        touchMoved = true; 
         mouseOnCanvas = false; hoverTile = null; tooltip.style.display = 'none';
     } else if (e.touches.length === 2) { // Zoom
         const dx = e.touches[0].clientX - e.touches[1].clientX;
@@ -1239,11 +1246,15 @@ canvas.addEventListener('touchend', e => {
     if (!state.device.isMobile) return; 
     state.pan.active = false;
     
-    // Eğer parmak çok az hareket ettiyse (touchMoved false ise), bunu bir TIKLAMA (Tap) olarak kabul et.
-    if (!touchMoved && e.changedTouches.length === 1) { 
-        const t = e.changedTouches[0];
-        const rect = canvas.getBoundingClientRect();
+    // FIX: Toplam hareket mesafesini kontrol et
+    const t = e.changedTouches[0];
+    const totalMoveX = Math.abs(t.clientX - touchStartAbsX);
+    const totalMoveY = Math.abs(t.clientY - touchStartAbsY);
+    const totalMoveDistance = Math.hypot(totalMoveX, totalMoveY); 
 
+    // Eğer toplam hareket mesafesi eşiği aşmadıysa ve tek parmakla dokunma bittiyse (Tap)
+    if (totalMoveDistance < MOBILE_TAP_THRESHOLD && e.changedTouches.length === 1) { 
+        const rect = canvas.getBoundingClientRect();
         const mouseX = t.clientX - rect.left;
         const mouseY = t.clientY - rect.top;
 
