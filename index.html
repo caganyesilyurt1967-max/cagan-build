@@ -1,0 +1,1402 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>City Builder — Final Visuals (TR)</title>
+<style>
+  :root{ --bg:#05121a; --panel:#0d1418; --muted:#9aa3af; --accent:#4bd; }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,#031018,#05121a);color:#e6f0f8;font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+  .app{display:flex;gap:12px;height:100vh;padding:12px}
+  @media(max-width:900px){.app{flex-direction:column;padding:8px} #leftpanel{order:2;width:100%} #game{order:1;padding:10px} canvas{width:100%;height:auto}}
+  #leftpanel{width:360px;background:linear-gradient(180deg,#0e1518,#0b1114);padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.02);overflow:auto}
+  #topbar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(0,0,0,0.06));border:1px solid rgba(255,255,255,0.02);backdrop-filter:blur(6px)}
+  .stat{display:flex;gap:6px;align-items:baseline;color:var(--muted);font-size:13px;padding:6px;border-radius:8px}
+  .stat b{color:#fff}
+  .top-controls{margin-left:auto;display:flex;gap:8px;align-items:center}
+  #game{flex:1;background:linear-gradient(180deg,#081218,#061018);border-radius:12px;border:1px solid rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;position:relative;padding:12px;overflow:hidden}
+  canvas{border-radius:8px;background:#021217;display:block;max-width:100%;height:auto}
+  .card{background:linear-gradient(180deg,#081018,#0e1519);padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);cursor:pointer;margin-bottom:8px}
+  .small{font-size:12px;color:var(--muted)}
+  button,select,input{background:linear-gradient(180deg,#0f1518,#0b1012);color:#e8f4ff;border:1px solid rgba(255,255,255,0.02);padding:8px;border-radius:8px;cursor:pointer;font-size:13px}
+  .tooltip{position:absolute;padding:6px 8px;border-radius:6px;background:rgba(0,0,0,0.75);color:#fff;font-size:13px;pointer-events:none;z-index:60;transform:translate(-50%,-140%)}
+  
+  /* Yeni Stiller */
+  #mainTitle {
+    position: absolute;
+    top: 20px;
+    font-size: 32px;
+    font-weight: 900;
+    color: #4bd;
+    text-shadow: 0 0 10px rgba(75, 189, 220, 0.4);
+    z-index: 50;
+    pointer-events: none;
+  }
+  #copyright {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    font-size: 11px;
+    color: rgba(230, 240, 248, 0.2); 
+    z-index: 50;
+    pointer-events: none;
+  }
+  .task-item {
+    padding: 6px 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .task-item button {
+    padding: 3px 8px;
+    margin-left: 8px;
+    background: linear-gradient(180deg, #a6e07d, #7dc04b); /* Tamamlanmış Görev Butonu Rengi */
+    color: #0d1418;
+    font-weight: 700;
+  }
+  /* Görevler Başlığını daha belirgin yaptık */
+  .section-title {
+    margin:14px 0 10px 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 4px;
+  }
+
+  /* Cihaz Seçim Ekranı Stilleri (YENİ) */
+  #device-selection-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg); /* Arkaplan rengini kullan */
+    z-index: 1000; /* En üstte olmalı */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #e6f0f8;
+    text-align: center;
+  }
+  #device-selection-overlay h2 {
+    color: var(--accent);
+    font-size: 28px;
+    margin-bottom: 25px;
+    text-shadow: 0 0 10px rgba(75, 189, 220, 0.4);
+  }
+  #device-controls {
+    display: flex;
+    gap: 30px;
+    margin-top: 20px;
+  }
+  .device-button {
+    background: linear-gradient(180deg,#0f1518,#0b1012);
+    color: #e8f4ff;
+    border: 2px solid var(--accent);
+    padding: 15px 30px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 700;
+    transition: background 0.2s, transform 0.1s;
+    min-width: 150px;
+  }
+  .device-button:hover {
+    background: linear-gradient(180deg, #4bd, #3aa);
+    transform: translateY(-2px);
+  }
+  .device-button:active {
+    transform: translateY(0);
+  }
+
+</style>
+</head>
+<body>
+  
+  <div id="device-selection-overlay" style="display: none;">
+    <h2>Hangi cihazı kullanıyorsun?</h2>
+    <div id="device-controls">
+      <button class="device-button" id="pc-btn">PC</button>
+      <button class="device-button" id="mobile-btn">Telefon</button>
+    </div>
+    <div class="small" style="margin-top: 30px; color: var(--muted);">
+        Seçimin kaydedilecektir. Cihaz ayarını sonradan değiştirmek için tarayıcı çerezlerini temizleyin.
+    </div>
+  </div>
+  <div class="app" style="display: none;"> <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+      <div id="topbar">
+        <div class="stat">Para: <b id="money">0</b>₺</div>
+        <div class="stat">Odun: <b id="wood">0</b></div>
+        <div class="stat">Taş: <b id="stone">0</b></div>
+        <div class="stat">Yiyecek: <b id="food">0</b></div>
+        <div class="stat">Enerji: <b id="energy">0</b></div>
+        <div id="steelEl" class="stat">Çelik: <b>0</b></div>
+        <div id="brickEl" class="stat">Tuğla: <b>0</b></div>
+        <div class="stat">Nüfus: <b id="pop">0</b>/<b id="cap">0</b></div>
+        <div class="stat">Mutluluk: <b id="hap">0</b></div>
+        <div class="top-controls">
+          <button id="saveBtn">Kaydet</button>
+          <button id="loadBtn">Yükle</button>
+          <button id="clearBtn">Temizle</button>
+          <select id="overlaySelect"><option value="none">Overlay Yok</option><option value="access">Yol</option><option value="pollution">Kirlilik</option><option value="happiness">Mutluluk</option><option value="efficiency">Verim</option></select>
+        </div>
+      </div>
+
+      <div id="game">
+        <div id="mainTitle">ÇAĞAN BUİLD</div>
+        <canvas id="canvas"></canvas>
+        <div id="tooltip" class="tooltip" style="display:none"></div>
+        <div id="copyright">Copyright Çağan Yeşilyurt 2025</div>
+      </div>
+    </div>
+
+    <div id="leftpanel">
+      <div style="margin-top:4px">
+        <div class="section-title">Görevler 📝</div>
+        <div id="taskList" class="small" style="margin-top:6px"></div>
+      </div>
+      <h3 style="margin:14px 0 10px 0">Yapı Seç</h3>
+      <div id="palette"></div>
+      <div id="info" class="small" style="margin-top:8px">Haritaya tıkla. R ile döndür, ESC ile iptal. Mobil: tek parmak kaydır (pan), iki parmak yakınlaştır (zoom).</div>
+
+      <div style="margin-top:12px">
+        <div class="small">Pazar</div>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <select id="marketSelect"><option value="food">Yiyecek</option><option value="wood">Odun</option><option value="stone">Taş</option><option value="steel">Çelik</option><option value="brick">Tuğla</option></select>
+          <input id="marketAmount" type="number" value="10" min="1" style="width:80px"/>
+          <button id="marketBuy">Satın Al</button>
+          <button id="marketSell">Sat</button>
+        </div>
+        <div id="marketPrices" class="small" style="margin-top:6px">Fiyatlar: Y 1</div>
+      </div>
+
+      <div style="margin-top:12px">
+        <div class="small">Ayarlar</div>
+        <div style="margin-top:6px" class="small">Performans: <select id="perfSelect"><option>high</option><option>medium</option><option>low</option></select></div>
+        <div style="margin-top:8px" class="small">Otomatik satış oranları ve fiyatlar sol panelde ayarlanabilir.</div>
+      </div>
+      
+    </div>
+  </div>
+
+<script>
+/* Final Visuals — Single file
+   - Procedural canvas icons for house, factory, depot, park, power
+   - Offscreen caching, culling, 30 FPS throttling, particle limits
+   - Depot capacity, truck logistics, manual harvest, market dynamic
+   - Cagan Build Branding (Title, Copyright)
+   - Adjusted balance for easier start (NEW)
+   - Continuous Income and Task System (NEW)
+   // Düzeltme 1: PC'de sürükleme/tıklama ayrımı yapıldı (isDraggingPC)
+   // Düzeltme 2: Kaynak kaybını önlemek için üretim ve oto-satış mantığı düzeltildi
+*/
+
+/* CONFIG */
+const CONFIG = {
+  cols: 28, rows: 18,
+  margin: 20,
+  baseTile: 36,
+  tickMs: 900,
+  initialMoney: 600, 
+  marketBase: { food:1.1, wood:0.8, stone:0.9, energy: 0.75, steel: 1.8, brick: 1.5 },
+  autoSell: { farm:0.3, lumber:0.2, foundry: 0.1, kiln: 0.1 }, 
+  performance: 'high',
+  renderFPS: 30,
+  particleLimits: { high:240, medium:120, low:60 }
+};
+
+/* BUILDING DEFS... */
+const BUILDING_DEFS = [
+  { type:'road', display:'Yol', cost:{money:2}, footprint:{w:1,h:1}, color:'#50555a', desc:'Şeritli yol' }, 
+  { type:'house', display:'Ev', cost:{money:35,wood:8}, footprint:{w:2,h:2}, provides:{capacity:6,happiness:6}, color:'#f4d7c3', desc:'Konut' }, 
+  { type:'mansion', display:'Köşk', cost:{money:200,steel:10,brick:10}, footprint:{w:3,h:3}, 
+    provides:{capacity:15,happiness:15}, color:'#f9f2e7', desc:'Büyük konut. İşlenmiş malzeme ister.' },
+  { type:'depot', display:'Depo', cost:{money:60,wood:8,stone:8}, footprint:{w:2,h:2}, storage:{wood:500,stone:500,food:500,steel:500,brick:500}, color:'#6b6b6b', desc:'Depolama' },
+  { type:'lumber', display:'Kereste', cost:{money:50,wood:10}, footprint:{w:2,h:2}, outputs:{wood:3.0}, proximity:{terrain:'forest',per:0.02,max:0.35}, color:'#b78a2b', desc:'Kereste fabrikası' }, 
+  { type:'foundry', display:'Demirhane', cost:{money:150,stone:20}, footprint:{w:3,h:2}, 
+    outputs:{steel:1.2}, upkeep:{energy: 2}, consumes:{wood: 1.5}, color:'#8c8c8c', 
+    desc:'Odun yakarak Çelik üretir. Enerji ve Odun tüketir.' },
+  { type:'kiln', display:'Fırın', cost:{money:120,wood:15}, footprint:{w:2,h:2}, 
+    outputs:{brick:1.5}, upkeep:{energy: 1}, consumes:{stone: 1.0}, color:'#c55a40', 
+    desc:'Taş kullanarak Tuğla üretir. Enerji ve Taş tüketir.' },
+  { type:'farm', display:'Tarla', cost:{money:40,wood:6}, footprint:{w:3,h:2}, outputs:{food:3.2}, seasonal:{spring:1,summer:1.4,autumn:0.9,winter:0.35}, color:'#d8b763', desc:'Buğday tarlası' }, 
+  { type:'power', display:'Jeneratör', cost:{money:80,stone:12}, footprint:{w:2,h:2}, outputs:{energy:8.5}, color:'#a07bff', desc:'Enerji üretir' }, 
+  { type:'park', display:'Park', cost:{money:30,wood:8}, footprint:{w:2,h:2}, service:{happiness:12,radius:4}, color:'#6bc07f', desc:'Park (oyun alanı)' } 
+];
+
+/* DOM */
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const tooltip = document.getElementById('tooltip');
+const moneyEl = document.getElementById('money');
+const woodEl = document.getElementById('wood');
+const stoneEl = document.getElementById('stone');
+const foodEl = document.getElementById('food');
+const energyEl = document.getElementById('energy');
+const popEl = document.getElementById('pop');
+const capEl = document.getElementById('cap');
+const hapEl = document.getElementById('hap');
+const marketPricesEl = document.getElementById('marketPrices');
+const perfSelect = document.getElementById('perfSelect');
+const taskListEl = document.getElementById('taskList'); 
+
+/* State */
+let state = {
+  cols: CONFIG.cols, rows: CONFIG.rows,
+  tile: CONFIG.baseTile, tiles: [], buildings: [], money: CONFIG.initialMoney,
+  resources: { wood:50, stone:30, food:25, energy:0, steel: 0, brick: 0 },
+  population: { workers:0, capacity:0, happiness:58 },
+  time: { tick:0, season:'spring', seasonTick:0 },
+  selected: null, overlay:'none',
+  particles: [], traffic: { vehicles: [] },
+  depotCapacity: { wood:500, stone:500, food:500, steel: 500, brick: 500 },
+  device: { 
+    dpr: window.devicePixelRatio || 1, 
+    isMobile: false 
+  }, 
+  tasks: [], 
+  tasks_completed: { firstHouse: false },
+  // MOBİL KONTROL STATE'LERİ
+  pan: { x: 0, y: 0, active: false, startX: 0, startY: 0 },
+  zoom: 1.0,
+  pinch: { distance: 0 },
+};
+
+const MIN_ZOOM = 0.5, MAX_ZOOM = 3.0;
+
+/* Offscreen caches (Aynı) */
+const cache = {
+  house: null, factory: null, depot: null, park: null, power: null 
+};
+
+/* Adapt layout & pixel ratio (Aynı) */
+function adapt(){
+  const availW = Math.max(320, window.innerWidth - 420);
+  const availH = Math.max(220, window.innerHeight - 160);
+  const tileW = Math.floor(availW / state.cols);
+  const tileH = Math.floor(availH / state.rows);
+  state.tile = Math.max(18, Math.min(56, Math.min(tileW, tileH)));
+  const w = CONFIG.margin*2 + state.cols*state.tile;
+  const h = CONFIG.margin*2 + state.rows*state.tile;
+  const dpr = state.device.dpr;
+  canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+  canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  
+  const gameRect = document.getElementById('game').getBoundingClientRect();
+  const titleEl = document.getElementById('mainTitle');
+  titleEl.style.left = (gameRect.width / 2) + 'px';
+  titleEl.style.transform = 'translateX(-50%)';
+  
+  createCaches();
+}
+window.addEventListener('resize', adapt);
+
+/* Create offscreen caches (Aynı) */
+function createCaches(){
+  const s = Math.max(40, Math.floor(state.tile*1.6));
+  cache.house = makeCache(s, s, (c, cx) => drawHouseIcon(cx, 0, 0, s, s));
+  cache.factory = makeCache(s+10, s, (c, cx) => drawFactoryIcon(cx, 0, 0, s+10, s));
+  cache.depot = makeCache(s, s, (c, cx) => drawDepotIcon(cx, 0, 0, s, s));
+  cache.park = makeCache(s, s, (c, cx) => drawParkIcon(cx, 0, 0, s, s));
+  cache.power = makeCache(s, s, (c, cx) => drawPowerIcon(cx, 0, 0, s, s));
+  cache.road = makeCache(state.tile, state.tile, (c, cx) => drawRoadTile(cx, 0, 0, state.tile));
+}
+function makeCache(w,h,drawFn){
+  const c = document.createElement('canvas'); c.width = w; c.height = h; const cx = c.getContext('2d');
+  drawFn(c, cx); return c;
+}
+
+/* Tile init (Aynı) */
+function initTiles(){
+  state.tiles = new Array(state.cols*state.rows);
+  for (let y=0;y<state.rows;y++) for (let x=0;x<state.cols;x++){
+    const i = y*state.cols + x;
+    const f = Math.random() < 0.14, r = Math.random() < 0.05;
+    const terrain = f ? 'forest' : (r ? 'rock' : 'grass');
+    state.tiles[i] = { x,y,terrain,road:false,buildingId:null,pollution:0,happiness:0,efficiency:1 };
+  }
+}
+
+/* Palette UI (Aynı) */
+function initPalette(){
+  const pal = document.getElementById('palette'); pal.innerHTML = '';
+  for (const def of BUILDING_DEFS){
+    const el = document.createElement('div'); el.className='card';
+    el.innerHTML = `<div style="font-weight:700">${def.display}</div><div class="small" style="margin-top:6px">${def.desc}</div><div class="small" style="margin-top:6px">Maliyet: ${fmtCost(def.cost)}</div>`;
+    el.onclick = ()=>{ state.selected = { spec:def }; document.getElementById('info').textContent = `Seçili: ${def.display}. Haritaya tıkla.`; };
+    pal.appendChild(el);
+  }
+}
+function fmtCost(cost){ return Object.entries(cost||{}).map(([k,v])=>`${k}:${v}`).join(', ') || '—'; }
+
+/* HUD update (Aynı) */
+function updateHUD(){
+  document.getElementById('money').textContent = Math.floor(state.money);
+  document.getElementById('wood').textContent = Math.floor(state.resources.wood);
+  document.getElementById('stone').textContent = Math.floor(state.resources.stone);
+  document.getElementById('food').textContent = Math.floor(state.resources.food);
+  document.getElementById('energy').textContent = Math.floor(state.resources.energy);
+  
+  // HUD'daki Çelik ve Tuğla değerlerini güncelle
+  document.getElementById('steelEl').innerHTML = `Çelik: <b>${Math.floor(state.resources.steel)}</b>`;
+  document.getElementById('brickEl').innerHTML = `Tuğla: <b>${Math.floor(state.resources.brick)}</b>`;
+
+  document.getElementById('pop').textContent = Math.floor(state.population.workers);
+  document.getElementById('cap').textContent = Math.floor(state.population.capacity);
+  document.getElementById('hap').textContent = Math.floor(state.population.happiness);
+  
+  document.getElementById('marketPrices').textContent = `Fiyatlar: Yiyecek ${CONFIG.marketBase.food}₺, Odun ${CONFIG.marketBase.wood}₺, Taş ${CONFIG.marketBase.stone}₺, Enerji ${CONFIG.marketBase.energy}₺, Çelik ${CONFIG.marketBase.steel}₺, Tuğla ${CONFIG.marketBase.brick}₺`;
+  updateTaskList(); 
+}
+
+/* Placement check (Aynı) */
+function canPlace(spec,gx,gy){
+  if (gx<0||gy<0||gx+spec.footprint.w>state.cols||gy+spec.footprint.h>state.rows) return false;
+  for (let yy=0;yy<spec.footprint.h;yy++) for (let xx=0;xx<spec.footprint.w;xx++){
+    const idx=(gy+yy)*state.cols+(gx+xx); if (state.tiles[idx].buildingId) return false;
+  }
+  if (spec.cost?.money && state.money < spec.cost.money) return false;
+  if (spec.cost?.wood && state.resources.wood < spec.cost.wood) return false;
+  if (spec.cost?.stone && state.resources.stone < spec.cost.stone) return false;
+  if (spec.cost?.steel && state.resources.steel < spec.cost.steel) return false;
+  if (spec.cost?.brick && state.resources.brick < spec.cost.brick) return false;
+  return true;
+}
+function placeBuilding(spec,gx,gy){
+  if (!canPlace(spec,gx,gy)) return false;
+  if (spec.cost?.money) state.money -= spec.cost.money;
+  if (spec.cost?.wood) state.resources.wood -= spec.cost.wood;
+  if (spec.cost?.stone) state.resources.stone -= spec.cost.stone;
+  if (spec.cost?.steel) state.resources.steel -= spec.cost.steel;
+  if (spec.cost?.brick) state.resources.brick -= spec.cost.brick;
+  const id = `${spec.type}_${Date.now()}_${Math.floor(Math.random()*9999)}`;
+  const b = { id, type:spec.type, spec, pos:{x:gx,y:gy}, level:1, efficiency:1, stored:0, truck:null };
+  state.buildings.push(b);
+  for (let yy=0;yy<spec.footprint.h;yy++) for (let xx=0;xx<spec.footprint.w;xx++){
+    state.tiles[(gy+yy)*state.cols + (gx+xx)].buildingId = id;
+  }
+  recomputeAll(); updateHUD();
+  
+  // Görev Kontrolü
+  if (spec.type==='house' && !state.tasks_completed.firstHouse){ 
+    state.tasks_completed.firstHouse=true; 
+    addTask({ type:'build', target:'house', count:3, reward:75, desc:'3 Ev İnşa Et' }); 
+  }
+  
+  return true;
+}
+
+/* Recompute helpers (Aynı) */
+function recomputeAccess(){
+  const cols=state.cols, rows=state.rows; const access = new Array(cols*rows).fill(0); const q=[];
+  for (let i=0;i<cols*rows;i++) if (state.tiles[i].road) { access[i]=1; q.push(i); }
+  const neigh = i=>{ const x=i%cols,y=Math.floor(i/cols); const r=[]; if (x>0) r.push(i-1); if (x<cols-1) r.push(i+1); if (y>0) r.push(i-cols); if (y<rows-1) r.push(i+cols); return r; };
+  while(q.length){ const i=q.shift(); for (const j of neigh(i)){ const next = Math.max(access[j], access[i]*0.6); if (next > access[j] + 1e-6){ access[j]=next; q.push(j); } } }
+  for (let i=0;i<cols*rows;i++) state.tiles[i].access = access[i];
+}
+function recomputeHappiness(){
+  const cols=state.cols, rows=state.rows; const H=new Array(cols*rows).fill(0);
+  for (const b of state.buildings) if (b.type==='park'){ const rad=b.spec.service.radius||4; for (let dy=-rad;dy<=rad;dy++) for (let dx=-rad;dx<=rad;dx++){ const tx=b.pos.x+dx, ty=b.pos.y+dy; if (tx<0||ty<0||tx>=cols||ty>=rows) continue; const d=Math.hypot(dx,dy); if (d<=rad) H[ty*cols+tx] += (b.spec.service.happiness||6)*(1-d/rad); } }
+  for (let i=0;i<cols*rows;i++){ const t=state.tiles[i]; const base = t.terrain==='forest'?2:0; t.happiness = Math.max(0,Math.min(100,H[i] + base - t.pollution*0.35)); }
+  let sum=0,count=0; for (const b of state.buildings) if (b.type==='house'||b.type==='mansion'){ const cx=b.pos.x+Math.floor(b.spec.footprint.w/2), cy=b.pos.y+Math.floor(b.spec.footprint.h/2); const idx = cy*state.cols + cx; sum += state.tiles[idx].happiness; count++; }
+  if (count) state.population.happiness = sum/count;
+}
+function recomputeEfficiency(){
+  for (const b of state.buildings){
+    let prox=0;
+    if (b.spec.proximity){
+      const rad=b.spec.proximity.radius||5; let count=0;
+      for (let yy=-rad;yy<=rad;yy++) for (let xx=-rad;xx<=rad;xx++){ const tx=b.pos.x+xx, ty=b.pos.y+yy; if (tx<0||ty<0||tx>=state.cols||ty>=state.rows) continue; if (state.tiles[ty*state.cols+tx].terrain === b.spec.proximity.terrain) count++; }
+      prox = Math.min(b.spec.proximity.max||0.35, count*(b.spec.proximity.per||0.02));
+    }
+    const accessMult = Math.max(0.5, state.tiles[b.pos.y*state.cols + b.pos.x].access || 0);
+    b.efficiency = (1 + prox) * accessMult * (1 + (b.level-1)*0.12);
+  }
+}
+function recomputeAll(){ recomputeAccess(); recomputeHappiness(); recomputeEfficiency(); }
+
+/* Tick: production, auto-sell, depot overflow, tax, growth (Düzeltilmiş Oto-Satış Mantığı) */
+function tick(){
+  state.time.tick++; state.time.seasonTick++;
+  if (state.time.seasonTick > 24){ state.time.seasonTick = 0; state.time.season = nextSeason(state.time.season); }
+
+// Nüfus Tüketimi (Food & Energy) BAŞLANGIÇ
+  const totalFoodUpkeep = state.population.workers * 0.5 * (1 + Math.max(0, 100 - state.population.happiness) / 200); 
+  const totalEnergyUpkeep = state.population.workers * 0.12;
+
+  if (state.resources.food >= totalFoodUpkeep) state.resources.food -= totalFoodUpkeep;
+  else state.population.happiness = Math.max(0, state.population.happiness - 3); 
+
+  if (state.resources.energy >= totalEnergyUpkeep) state.resources.energy -= totalEnergyUpkeep;
+  else state.population.happiness = Math.max(0, state.population.happiness - 1.5); 
+// Nüfus Tüketimi SONU
+
+  // production & auto-sell
+  for (const b of state.buildings){
+    const spec = b.spec;
+    const upkeep = spec.upkeep?.money || 0; state.money -= upkeep;
+    const upEnergy = spec.upkeep?.energy || 0;
+    
+    // MEVCUT ENERJİ KONTROLÜ
+    if (upEnergy > 0){ 
+      if (state.resources.energy >= upEnergy) state.resources.energy -= upEnergy; 
+      else b.efficiency *= 0.8; 
+    }
+    
+// Hammadde Tüketimi (Consumes) BAŞLANGIÇ
+    let canProduce = true;
+    if (spec.consumes) {
+        for (const [k, v] of Object.entries(spec.consumes)) {
+            const required = v * b.efficiency;
+            if (state.resources[k] >= required) {
+                state.resources[k] -= required;
+            } else {
+                b.efficiency = Math.max(0.2, b.efficiency * 0.9); 
+                canProduce = false;
+            }
+        }
+    }
+// Hammadde Tüketimi SONU
+
+    if (spec.outputs && canProduce){ 
+      
+      const outputKey = Object.keys(spec.outputs)[0]; // Üretilen kaynak
+      const baseOutput = spec.outputs[outputKey] || 0;
+      const seasonMult = spec.seasonal ? (spec.seasonal[state.time.season] || 1) : 1;
+      const produced = baseOutput * b.efficiency * seasonMult;
+      
+      // Enerji Üretimi (Enerji oto-satış mantığı farklı)
+      if (outputKey === 'energy'){
+        state.resources.energy = (state.resources.energy||0) + produced;
+      } 
+      
+      // Diğer Kaynakların Üretimi ve Oto-Satışı (Düzeltilen Mantık)
+      else {
+        const item = outputKey;
+        const autoSellRatio = CONFIG.autoSell[b.type] || 0;
+        
+        const currentStock = state.resources[item] || 0;
+        const cap = totalDepotCapacity(item);
+
+        // 1. Zorunlu otomatik satış miktarı
+        const dedicatedSell = produced * autoSellRatio;
+        
+        // 2. Depolanmak istenen miktar
+        const toStore = produced - dedicatedSell;
+
+        // 3. Mevcut depo kapasitesi
+        const canStore = Math.max(0, cap - currentStock);
+        
+        // 4. Depo kapasitesini aşan miktar (taşan kısım)
+        const overflow = Math.max(0, toStore - canStore);
+
+        // 5. Depolanan miktar: Current + ToStore - Overflow
+        state.resources[item] = currentStock + toStore - overflow;
+        
+        // 6. Toplam satılan miktar: Dedicated Sell + Overflow
+        const totalSold = dedicatedSell + overflow; 
+        state.money += totalSold * CONFIG.marketBase[item];
+      }
+    }
+  }
+
+  // power sells excess energy
+  for (const b of state.buildings) if (b.type === 'power'){
+    // Bu enerji zaten çıktı olarak eklenmiştir. Burada sadece fazla enerjiyi sat.
+    if (state.resources.energy > 10){ 
+        const sell = Math.floor(state.resources.energy - 8); 
+        state.resources.energy -= sell; 
+        state.money += sell * CONFIG.marketBase.energy; 
+    }
+  }
+
+  // depot overflow: if resources exceed total depot capacity -> auto-sell/decay (Harvest, Market alımları için)
+  handleDepotOverflow();
+
+  // TAX (VERGİ GELİRİ ARTIŞI)
+  const taxFromWorkers = state.population.workers * 0.8; 
+  const taxFromCapacity = state.population.capacity * 0.15; 
+  const taxFromHappiness = state.population.happiness * 0.05; 
+  
+  const tax = taxFromWorkers + taxFromCapacity + taxFromHappiness;
+  state.money += tax; 
+
+  // pop growth
+  let cap = 0; for (const b of state.buildings) if (b.type==='house'||b.type==='mansion') cap += (b.spec.provides?.capacity || 6);
+  state.population.capacity = cap;
+  const growth = Math.max(0, Math.min(1.5, (state.population.happiness - 35)/60)) * 1.5;
+  state.population.workers = Math.min(cap, Math.floor(state.population.workers + growth));
+
+  // market dynamic
+  adaptMarketPrices();
+  
+// Zaman Kısıtlı Görev Süresi Azaltma BAŞLANGIÇ
+for (let i = state.tasks.length - 1; i >= 0; i--) {
+    const task = state.tasks[i];
+    if (task.timer > 0) {
+        task.timer--;
+        if (task.timer <= 0) {
+            document.getElementById('info').textContent = `${task.desc.replace(/ \(.*\)/, '')} başarısız oldu (Zaman bitti).`;
+            state.tasks.splice(i, 1); 
+        }
+    }
+}
+// Zaman Kısıtlı Görev Süresi Azaltma SONU
+  
+  // Görev Tetikleme (Her 15 Tick'te bir)
+  if (state.time.tick % 15 === 0) checkAndGenerateTasks();
+
+  recomputeHappiness(); updateHUD();
+}
+
+/* Görev Yönetimi (Aynı) */
+
+const TASK_DEFS = [
+    { type:'build', target:'house', count:1, reward:50, desc:'1 Ev İnşa Et' },
+    { type:'build', target:'depot', count:1, reward:60, desc:'1 Depo İnşa Et' },
+    { type:'build', target:'road', count:5, reward:40, desc:'5 Yol İnşa Et' },
+    { type:'resource', target:'wood', count:50, reward:45, desc:'50 Odun Topla' },
+    { type:'resource', target:'food', count:60, reward:55, desc:'60 Yiyecek Topla' },
+    { type:'build', target:'foundry', count:1, reward:120, desc:'1 Demirhane Kur', prereq: {type:'resource', target:'stone', count:50} },
+    { type:'build', target:'mansion', count:1, reward:250, desc:'1 Köşk İnşa Et', prereq: {type:'build', target:'foundry', count:1} },
+    { type:'population', target:'workers', count:25, reward:100, desc:'Nüfusu 25\'e çıkar' },
+];
+
+function addTask(task){
+    // Görev zaten listede varsa ekleme
+    if (state.tasks.some(t => t.desc === task.desc)) return;
+    task.id = Date.now() + Math.random();
+    task.timer = task.timer || 0; 
+    state.tasks.push(task);
+}
+
+function checkAndGenerateTasks(){
+    // Mevcut görevlerin gereksinimlerini kontrol et ve tamamlanmış prereq'leri temizle
+    for (let i = state.tasks.length - 1; i >= 0; i--) {
+        const task = state.tasks[i];
+        if (task.prereq) {
+            let prereqMet = false;
+            if (task.prereq.type === 'build') {
+                const current = state.buildings.filter(b => b.type === task.prereq.target).length;
+                if (current >= task.prereq.count) prereqMet = true;
+            } else if (task.prereq.type === 'resource') {
+                const current = Math.floor(state.resources[task.prereq.target] || 0);
+                if (current >= task.prereq.count) prereqMet = true;
+            }
+            
+            if (prereqMet) {
+                delete task.prereq;
+            }
+        }
+    }
+
+    // Basit ve rastgele görev ekleme (Maksimum 3 rastgele görev)
+    const activeRandomTasks = state.tasks.filter(t => !t.prereq && t.type !== 'chain').length;
+    if (activeRandomTasks < 3) {
+        const availableTasks = TASK_DEFS.filter(def => !def.prereq && !state.tasks.some(t => t.desc === def.desc));
+        if (availableTasks.length === 0) return;
+        
+        const newTask = {...availableTasks[Math.floor(Math.random() * availableTasks.length)]};
+        
+        // Rastgele görevlere zaman kısıtlaması ekle
+        if (Math.random() < 0.3) { 
+            newTask.timer = Math.floor(Math.random() * 15) + 20; 
+            newTask.desc = `${newTask.desc} (Süreli)`;
+        }
+        
+        addTask(newTask);
+    }
+}
+
+function updateTaskList(){
+    taskListEl.innerHTML = '';
+    // İlk Ev görevi (tamamlandıysa kaldır)
+    if (!state.tasks_completed.firstHouse){
+        taskListEl.innerHTML += `<div class="task-item small" style="color:#4bd;">- İlk evini kur (ödül: 50₺)</div>`;
+    }
+
+    state.tasks.forEach((task, index) => {
+        let current = 0;
+        let meetsCondition = false;
+        let prereqText = '';
+
+        // ÖN KOŞUL KONTROLÜ
+        if (task.prereq) {
+            let prereqCurrent = 0;
+            let prereqTypeDisplay = task.prereq.target === 'stone' ? 'Taş' : task.prereq.target === 'foundry' ? 'Demirhane' : 'Yapı';
+
+            if (task.prereq.type === 'build') {
+                prereqCurrent = state.buildings.filter(b => b.type === task.prereq.target).length;
+            } else if (task.prereq.type === 'resource') {
+                prereqCurrent = Math.floor(state.resources[task.prereq.target] || 0);
+            }
+
+            if (prereqCurrent < task.prereq.count) {
+                prereqText = `<span style="color:#c55a40; font-weight:700;">[Ön Koşul: ${prereqTypeDisplay} ${task.prereq.count} (Mevcut: ${prereqCurrent})]</span>`;
+            } else {
+                prereqText = `<span style="color:#a6e07d; font-weight:700;">[Ön Koşul Tamamlandı]</span>`;
+            }
+        }
+        
+        // İlerleme Kontrolü
+        if (!task.prereq || prereqText.includes('Tamamlandı')) { 
+            if (task.type === 'build'){ 
+                current = state.buildings.filter(b => b.type === task.target).length;
+                if (current >= task.count) meetsCondition = true;
+            } else if (task.type === 'resource'){ 
+                current = Math.floor(state.resources[task.target] || 0);
+                if (current >= task.count) meetsCondition = true;
+            } else if (task.type === 'population'){ 
+                current = Math.floor(state.population.workers);
+                if (current >= task.count) meetsCondition = true;
+            }
+        }
+
+        const progText = task.type === 'build' ? `(${Math.min(current, task.count)}/${task.count})` : 
+                         task.type === 'population' ? `(Mevcut: ${Math.min(current, task.count)}/${task.count})` : 
+                         `(Stok: ${Math.min(current, task.count)}/${task.count})`;
+
+        const timerText = task.timer > 0 ? `<span style="color:#c55a40; margin-left: 5px;">[ ${task.timer} Tick Kaldı ]</span>` : '';
+        
+        const itemEl = document.createElement('div');
+        itemEl.className = 'task-item small';
+        itemEl.innerHTML = ` 
+            <span>${task.desc.replace(/ \(.*\)/, '')} <span style="font-weight:700; color: #e6f0f8;">${progText}</span> (Ödül: ${task.reward}₺) ${timerText}</span>
+            ${prereqText.length > 0 ? `<br><span>${prereqText}</span>` : ''}
+        `;
+
+        if (meetsCondition) {
+            const btn = document.createElement('button');
+            btn.textContent = 'Al';
+            btn.onclick = () => completeTask(task.id);
+            itemEl.appendChild(btn);
+            itemEl.style.color = '#a6e07d';
+        } else if (task.prereq && !prereqText.includes('Tamamlandı')) {
+             itemEl.style.color = '#9aa3af'; 
+        }
+        
+        taskListEl.appendChild(itemEl);
+    });
+}
+
+function completeTask(taskId){
+    const index = state.tasks.findIndex(t => t.id === taskId);
+    if (index === -1) return;
+    const task = state.tasks[index];
+    
+    // Ödül ver
+    state.money += task.reward;
+    document.getElementById('info').textContent = `${task.desc.replace(/ \(.*\)/, '')} tamamlandı! ${task.reward}₺ kazandın.`;
+
+    // Görevi listeden kaldır
+    state.tasks.splice(index, 1);
+    updateHUD(); 
+}
+
+function nextSeason(current){
+    if (current==='spring') return 'summer'; if (current==='summer') return 'autumn'; if (current==='autumn') return 'winter'; return 'spring';
+}
+function totalDepotCapacity(resource){
+    let capacity = 0;
+    for (const b of state.buildings) if (b.type==='depot') capacity += (b.spec.storage?.[resource] || 0);
+    // Başlangıç kaynakları için temel kapasite ekle
+    if (resource === 'wood' || resource === 'stone' || resource === 'food') return capacity + 500; 
+    return capacity;
+}
+function handleDepotOverflow(){
+    // Market alımları ve hasat ile kapasiteyi aşan kaynakları düşür/sat
+    Object.entries(state.resources).forEach(([k,v])=>{
+        const cap = totalDepotCapacity(k);
+        if (v > cap){
+            const excess = v - cap;
+            // %15 çürüme/kayıp, kalan %85 düşük fiyata satılır.
+            const decayed = excess * 0.15; 
+            const toSell = excess - decayed; 
+            state.resources[k] = cap;
+            state.money += toSell * (CONFIG.marketBase[k] * 0.75);
+        }
+    });
+}
+
+/* Market manual actions (Aynı) */
+document.getElementById('marketBuy').onclick = ()=>marketAction('buy');
+document.getElementById('marketSell').onclick = ()=>marketAction('sell');
+function marketAction(action){
+    const item = document.getElementById('marketSelect').value;
+    const amount = Math.max(1,Math.floor(Number(document.getElementById('marketAmount').value)||1));
+    const price = CONFIG.marketBase[item] || 1;
+    if (action==='buy'){
+        const cost = amount * price;
+        if (state.money < cost){ alert('Yeterli para yok'); return; }
+        state.money -= cost;
+        state.resources[item] = (state.resources[item]||0) + amount;
+        // Overflow anında devreye girecek olan handleDepotOverflow'a güveniyoruz
+    } else {
+        if ((state.resources[item]||0) < amount){ alert('Yeterli stok yok'); return; }
+        state.resources[item] -= amount;
+        state.money += amount * price;
+    }
+    updateHUD();
+}
+
+/* Market dynamic (Aynı) */
+function adaptMarketPrices(){
+    CONFIG.marketBase.food = Math.max(0.6, 1.1 + (Math.sin(state.time.tick/40) * 0.05));
+    CONFIG.marketBase.wood = Math.max(0.4, 0.8 + (Math.cos(state.time.tick/50) * 0.03));
+    CONFIG.marketBase.stone = Math.max(0.5, 0.9 + (Math.sin(state.time.tick/60) * 0.02));
+    CONFIG.marketBase.energy = Math.max(0.4, 0.75 + (Math.sin(state.time.tick/70) * 0.025));
+    CONFIG.marketBase.steel = Math.max(1.2, 1.8 + (Math.sin(state.time.tick/90) * 0.1));
+    CONFIG.marketBase.brick = Math.max(1.0, 1.5 + (Math.cos(state.time.tick/100) * 0.1));
+}
+
+/* Vehicles for logistics (Aynı) */
+function spawnTruck(from, to){
+    const path = []; 
+    const dx = Math.sign(to.x - from.x), dy = Math.sign(to.y - from.y);
+    const steps = Math.max(Math.abs(to.x - from.x), Math.abs(to.y - from.y));
+    for (let i=0;i<=steps;i++){
+        path.push({ x: from.x + Math.round(i*dx), y: from.y + Math.round(i*dy) });
+    }
+    state.traffic.vehicles.push({ t:0, path, color:tRand()>0.8?'#6f8d3c':tRand()>0.6?'#703c8d':tRand()>0.4?'#8d3c3c':'#3c5d8d' });
+}
+function updateTrucks(dt){
+    for (let i=state.traffic.vehicles.length-1;i>=0;i--){
+        const v = state.traffic.vehicles[i];
+        v.t += dt*4;
+        if (v.t >= v.path.length-1){ state.traffic.vehicles.splice(i,1); }
+    }
+}
+function autoSpawnTrucks(){
+    const depots = state.buildings.filter(b=>b.type==='depot');
+    if (depots.length < 1) return;
+    const from = depots[Math.floor(Math.random()*depots.length)];
+    const others = state.buildings.filter(b=>b.id !== from.id);
+    if (!others.length) return;
+    const to = others[Math.floor(Math.random()*others.length)];
+    const fromPos = { x: from.pos.x + Math.floor(from.spec.footprint.w/2), y: from.pos.y + Math.floor(from.spec.footprint.h/2) };
+    const toPos = { x: to.pos.x + Math.floor(to.spec.footprint.w/2), y: to.pos.y + Math.floor(to.spec.footprint.h/2) };
+    spawnTruck(fromPos, toPos);
+}
+
+/* Particles (Aynı) */
+function spawnParticle(px,py,color,life){ state.particles.push({x:px,y:py,color,life:life||30,t:0}); }
+function updateParticles(dt){
+    for (let i=state.particles.length-1;i>=0;i--){
+        const p = state.particles[i];
+        p.t += dt*8;
+        if (p.t > p.life) state.particles.splice(i,1);
+    }
+}
+function drawParticles(ctx2){
+    ctx2.globalAlpha = 0.8;
+    for (const p of state.particles){
+        const size = 3 * (1 - p.t/p.life);
+        ctx2.fillStyle = p.color;
+        ctx2.beginPath();
+        ctx2.arc(p.x, p.y - p.t, size, 0, Math.PI*2);
+        ctx2.fill();
+    }
+    ctx2.globalAlpha = 1;
+}
+
+/* Rendering helpers (Aynı) */
+function roundRect(ctxLocal, x, y, width, height, radius) {
+    if (typeof radius === 'number') { radius = {tl: radius, tr: radius, br: radius, bl: radius}; } else { radius = {...{tl: 0, tr: 0, br: 0, bl: 0}, ...radius}; }
+    ctxLocal.beginPath();
+    ctxLocal.moveTo(x + radius.tl, y);
+    ctxLocal.lineTo(x + width - radius.tr, y);
+    ctxLocal.quadraticCurveTo(x + width, y, x + width, y + radius.tr);
+    ctxLocal.lineTo(x + width, y + height - radius.br);
+    ctxLocal.quadraticCurveTo(x + width, y + height, x + width - radius.br, y + height);
+    ctxLocal.lineTo(x + radius.bl, y + height);
+    ctxLocal.quadraticCurveTo(x, y + height, x, y + height - radius.bl);
+    ctxLocal.lineTo(x, y + radius.tl);
+    ctxLocal.quadraticCurveTo(x, y, x + radius.tl, y);
+    ctxLocal.closePath();
+}
+function roundRectLocal(ctxLocal, x, y, width, height, radius) { // Cache'ler için local versiyon
+    if (typeof radius === 'number') { radius = {tl: radius, tr: radius, br: radius, bl: radius}; } else { radius = {...{tl: 0, tr: 0, br: 0, bl: 0}, ...radius}; }
+    ctxLocal.beginPath();
+    ctxLocal.moveTo(x + radius.tl, y);
+    ctxLocal.lineTo(x + width - radius.tr, y);
+    ctxLocal.quadraticCurveTo(x + width, y, x + width, y + radius.tr);
+    ctxLocal.lineTo(x + width, y + height - radius.br);
+    ctxLocal.quadraticCurveTo(x + width, y + height, x + width - radius.br, y + height);
+    ctxLocal.lineTo(x + radius.bl, y + height);
+    ctxLocal.quadraticCurveTo(x, y + height, x, y + height - radius.bl);
+    ctxLocal.lineTo(x, y + radius.tl);
+    ctxLocal.quadraticCurveTo(x, y, x + radius.tl, y);
+    ctxLocal.closePath();
+}
+function drawRoadTile(ctxLocal, x, y, size){
+    ctxLocal.clearRect(0,0,size,size);
+    ctxLocal.fillStyle = BUILDING_DEFS[0].color; // Road color
+    ctxLocal.fillRect(x,y,size,size);
+    // Center line
+    ctxLocal.fillStyle = '#fff'; ctxLocal.globalAlpha = 0.6;
+    ctxLocal.fillRect(x + size/2 - 1, y, 2, size);
+    ctxLocal.globalAlpha = 1;
+}
+function drawHouseIcon(ctxLocal, x, y, w, h){
+    ctxLocal.clearRect(0,0,w,h);
+    ctxLocal.fillStyle = '#f4d7c3';
+    roundRectLocal(ctxLocal, x+w*0.15, y+h*0.35, w*0.7, h*0.5, 4); ctxLocal.fill();
+    ctxLocal.fillStyle = '#9d4f3b'; // Roof
+    ctxLocal.beginPath(); ctxLocal.moveTo(x+w*0.1, y+h*0.35); ctxLocal.lineTo(x+w*0.9, y+h*0.35); ctxLocal.lineTo(x+w*0.5, y+h*0.1); ctxLocal.closePath(); ctxLocal.fill();
+    ctxLocal.fillStyle = '#6b6b6b'; // Door
+    ctxLocal.fillRect(x+w*0.42, y+h*0.65, w*0.16, h*0.2);
+}
+function drawFactoryIcon(ctxLocal, x, y, w, h){
+    ctxLocal.clearRect(0,0,w,h);
+    ctxLocal.fillStyle = '#8c8c8c';
+    roundRectLocal(ctxLocal, x+w*0.1, y+h*0.4, w*0.8, h*0.5, 6); ctxLocal.fill();
+    ctxLocal.fillStyle = '#6b6b6b';
+    ctxLocal.fillRect(x+w*0.65, y+h*0.15, w*0.1, h*0.25); // Chimney
+    ctxLocal.fillStyle = '#e6eef6';
+    ctxLocal.fillRect(x+w*0.25, y+h*0.5, w*0.1, h*0.15); // Window
+    ctxLocal.fillRect(x+w*0.45, y+h*0.5, w*0.1, h*0.15); // Window
+}
+function drawDepotIcon(ctxLocal, x, y, w, h){
+    ctxLocal.clearRect(0,0,w,h);
+    ctxLocal.fillStyle = '#4a4a4a';
+    roundRectLocal(ctxLocal, x+4, y+8, w-8, h-16, 6); ctxLocal.fill();
+    ctxLocal.fillStyle = '#e6eef6';
+    ctxLocal.font = `${Math.max(10, w/6)}px system-ui`;
+    ctxLocal.fillText('DEPO', x + w*0.12, y + h/2 + 6);
+    ctxLocal.fillStyle = '#2c2c2c';
+    ctxLocal.fillRect(x + w*0.64, y + h*0.44, w*0.18, h*0.36);
+}
+function drawParkIcon(ctxLocal, x, y, w, h){
+    ctxLocal.clearRect(0,0,w,h);
+    ctxLocal.fillStyle = '#6bc07f';
+    roundRectLocal(ctxLocal, x+2, y+2, w-4, h-4, 6); ctxLocal.fill();
+    ctxLocal.fillStyle = '#f08d35';
+    ctxLocal.beginPath();
+    ctxLocal.moveTo(x + w*0.7, y + h*0.18);
+    ctxLocal.lineTo(x + w*0.84, y + h*0.48);
+    ctxLocal.lineTo(x + w*0.64, y + h*0.48);
+    ctxLocal.closePath();
+    ctxLocal.fill();
+    ctxLocal.strokeStyle = '#6b3a1f';
+    ctxLocal.lineWidth = 2;
+    ctxLocal.beginPath();
+    ctxLocal.moveTo(x + w*0.18, y + h*0.14);
+    ctxLocal.lineTo(x + w*0.18, y + h*0.6);
+    ctxLocal.moveTo(x + w*0.34, y + h*0.14);
+    ctxLocal.lineTo(x + w*0.34, y + h*0.6);
+    ctxLocal.stroke();
+    ctxLocal.fillStyle = '#ffd8b8';
+    ctxLocal.beginPath();
+    ctxLocal.arc(x + w*0.25, y + h*0.42, Math.max(2, w*0.03), 0, Math.PI*2);
+    ctxLocal.fill();
+}
+function drawPowerIcon(ctxLocal, x, y, w, h){
+    ctxLocal.clearRect(0,0,w,h);
+    ctxLocal.fillStyle = '#555';
+    roundRectLocal(ctxLocal, x+4, y+8, w-8, h-16, 6); ctxLocal.fill();
+    ctxLocal.fillStyle = '#a07bff';
+    ctxLocal.beginPath();
+    ctxLocal.arc(x + w/2, y + h*0.4, w*0.2, 0, Math.PI*2);
+    ctxLocal.fill();
+    ctxLocal.strokeStyle = '#fff'; ctxLocal.lineWidth = 2;
+    ctxLocal.beginPath();
+    ctxLocal.moveTo(x + w/2, y + h*0.4); ctxLocal.lineTo(x + w/2, y + h*0.65);
+    ctxLocal.stroke();
+}
+function renderThrottle(){
+    if (CONFIG.performance==='low') return 1000/15; if (CONFIG.performance==='medium') return 1000/30; return 1000/60;
+}
+let lastRender = 0;
+function renderFrame(ts){
+    if (!lastRender) lastRender = ts;
+    if (ts - lastRender < renderThrottle()) return;
+    lastRender = ts;
+    
+    const ctx2 = ctx;
+    ctx2.clearRect(0,0,canvas.width/state.device.dpr,canvas.height/state.device.dpr);
+
+    // PAN VE ZOOM UYGULAMA BAŞLANGIÇ
+    ctx2.save();
+    ctx2.translate(state.pan.x, state.pan.y);
+    const centerX = (canvas.width/state.device.dpr) / 2;
+    const centerY = (canvas.height/state.device.dpr) / 2;
+    ctx2.translate(centerX, centerY);
+    ctx2.scale(state.zoom, state.zoom);
+    ctx2.translate(-centerX, -centerY);
+    // PAN VE ZOOM UYGULAMA SONU
+
+    // determine visible range (culling)
+    const viewLeft = 0, viewTop = 0, viewRight = state.cols-1, viewBottom = state.rows-1;
+
+    for (let y=viewTop;y<=viewBottom;y++){
+        for (let x=viewLeft;x<=viewRight;x++){
+            const t = state.tiles[y*state.cols + x];
+            const px = CONFIG.margin + x*state.tile, py = CONFIG.margin + y*state.tile;
+            
+            // ground
+            if (t.terrain === 'forest'){
+                const g = ctx2.createLinearGradient(px,py,px+state.tile,py+state.tile);
+                g.addColorStop(0,'#123a20'); g.addColorStop(1,'#0a2d18');
+                ctx2.fillStyle=g;
+            } else if (t.terrain === 'rock'){
+                ctx2.fillStyle = '#2f3338';
+            } else {
+                const g = ctx2.createLinearGradient(px,py,px,py+state.tile);
+                g.addColorStop(0,'#164036'); g.addColorStop(1,'#0f2b27');
+                ctx2.fillStyle=g;
+            }
+            roundRect(ctx2,px+0.5,py+0.5,state.tile-1,state.tile-1,6);
+            ctx2.fill();
+
+            // roads: draw cached pattern
+            if (t.road){
+                ctx2.drawImage(cache.road, px, py, state.tile, state.tile);
+            }
+
+            // small trees
+            if (t.terrain === 'forest' && !t.buildingId){
+                ctx2.fillStyle = '#476e33'; ctx2.beginPath();
+                ctx2.arc(px+state.tile*0.5, py+state.tile*0.5, state.tile*0.12, 0, Math.PI*2);
+                ctx2.fill();
+            }
+
+            // overlay
+            if (state.overlay !== 'none'){
+                ctx2.globalAlpha = 0.45;
+                if (state.overlay === 'access'){
+                    const a = t.access||0; 
+                    ctx2.fillStyle = a>0.5 ? `rgba(75, 189, 220, ${a*1.5})` : `rgba(197, 90, 64, ${1-a})`;
+                } else if (state.overlay === 'pollution'){
+                    const p = t.pollution / 100;
+                    ctx2.fillStyle = `rgba(197, 90, 64, ${p})`;
+                } else if (state.overlay === 'happiness'){
+                    const h = t.happiness / 100;
+                    ctx2.fillStyle = h>0.6 ? `rgba(166, 224, 125, ${h})` : `rgba(197, 90, 64, ${1-h})`;
+                } else if (state.overlay === 'efficiency'){
+                    const e = t.efficiency || 1;
+                    ctx2.fillStyle = e>=1 ? `rgba(75, 189, 220, ${Math.min(1,e-0.5)})` : `rgba(197, 90, 64, ${1-e})`;
+                }
+                ctx2.fillRect(px,py,state.tile,state.tile);
+                ctx2.globalAlpha = 1;
+            }
+        }
+    }
+    
+    // buildings
+    for (const b of state.buildings){
+        const spec = b.spec;
+        const w = spec.footprint.w * state.tile, h = spec.footprint.h * state.tile;
+        const px = CONFIG.margin + b.pos.x * state.tile, py = CONFIG.margin + b.pos.y * state.tile;
+        
+        ctx2.save();
+        ctx2.translate(px + w/2, py + h/2);
+        ctx2.rotate((b.rotation||0) * Math.PI/180);
+        ctx2.translate(-(px + w/2), -(py + h/2));
+
+        let cacheImg;
+        if (b.type==='house'||b.type==='mansion') cacheImg = cache.house;
+        else if (b.type==='farm'||b.type==='lumber'||b.type==='foundry'||b.type==='kiln') cacheImg = cache.factory;
+        else if (b.type==='depot') cacheImg = cache.depot;
+        else if (b.type==='park') cacheImg = cache.park;
+        else if (b.type==='power') cacheImg = cache.power;
+        
+        if (cacheImg){
+            const s = Math.min(w,h);
+            ctx2.drawImage(cacheImg, px + w/2 - s/2, py + h/2 - s/2, s, s);
+        } else {
+            ctx2.fillStyle = b.spec.color || '#fff';
+            roundRect(ctx2, px, py, w, h, 8);
+            ctx2.fill();
+        }
+
+        // Efficiency indicator (mini bar)
+        ctx2.fillStyle = b.efficiency >= 1 ? '#a6e07d' : '#c55a40';
+        ctx2.fillRect(px, py + h - 4, w * Math.min(1.0, Math.max(0.1, b.efficiency)), 3);
+        
+        // Label
+        ctx2.fillStyle = 'rgba(255,255,255,0.95)';
+        ctx2.font = `bold ${Math.max(10, state.tile/4.2)}px system-ui`;
+        ctx2.fillText(b.spec.display, px+6, py+ Math.max(14,state.tile/6));
+        ctx2.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx2.font = `${Math.max(9, state.tile/6)}px system-ui`;
+        ctx2.fillText('Lv'+b.level, px + w - 36, py + Math.max(14,state.tile/6));
+
+        ctx2.restore();
+    }
+    
+    // vehicles (Nostaljik araba görünümü)
+    for (const v of state.traffic.vehicles){
+        const path = v.path;
+        const tIndex = Math.floor(v.t);
+        if (tIndex < path.length - 1){
+            const p0 = path[Math.floor(v.t)];
+            const p1 = path[Math.min(path.length-1, Math.floor(v.t)+1)];
+            const lerp = v.t - Math.floor(v.t);
+            
+            const vx = CONFIG.margin + (p0.x + (p1.x - p0.x)*lerp) * state.tile + state.tile/2;
+            const vy = CONFIG.margin + (p0.y + (p1.y - p0.y)*lerp) * state.tile + state.tile/2;
+
+            const carW = Math.max(6, state.tile*0.2); 
+            const carH = Math.max(4, state.tile*0.12);
+            ctx2.fillStyle = v.color || '#B8860B'; 
+            ctx2.globalAlpha = 0.95; 
+            
+            const angle = Math.atan2(p1.y - p0.y, p1.x - p0.x);
+
+            ctx2.save();
+            ctx2.translate(vx, vy);
+            ctx2.rotate(angle);
+            ctx2.fillRect(-carW/2, -carH/2 + state.tile*0.15, carW, carH);
+            ctx2.restore();
+            
+            ctx2.globalAlpha = 1;
+        }
+    }
+    
+    // particles
+    drawParticles(ctx2);
+
+    // tooltip
+    if (mouseOnCanvas && hoverTile){
+        tooltip.style.display = 'block';
+        tooltip.style.left = (mouse.canvasX) + 'px';
+        tooltip.style.top = (mouse.canvasY) + 'px';
+        tooltip.innerHTML = `Kare ${hoverTile.x},${hoverTile.y} — ${hoverTile.terrain}<br>Poll: ${Math.floor(hoverTile.pollution)} Eff: ${(hoverTile.efficiency||1).toFixed(2)}`;
+        if (hoverTile.buildingId){
+            const b = state.buildings.find(x=>x.id === hoverTile.buildingId);
+            if (b) tooltip.innerHTML += `<br>Bina: ${b.spec.display} (Lv${b.level})`;
+        }
+    } else {
+        tooltip.style.display = 'none';
+    }
+
+    ctx2.restore();
+}
+
+/* Drawing Icon Helpers (Aynı) */
+function drawIcon(ctxD, cx, cy, type, w, h){
+    ctxD.save();
+    ctxD.translate(cx, cy);
+    if (type==='wood'){ ctxD.fillStyle='#8b4513'; roundRect(ctxD, -w/2, -h/2, w, h, 2); ctxD.fill(); }
+    else if (type==='stone'){ ctxD.fillStyle='#6b6b6b'; ctxD.beginPath(); ctxD.arc(-w/2, -h/2, w/2, 0, Math.PI*2); ctxD.fill(); }
+    else if (type==='food'){ ctxD.fillStyle='#32cd32'; ctxD.beginPath(); ctxD.arc(w/2, h/2, w/2, 0, Math.PI*2); ctxD.fill(); }
+    else if (type==='energy'){ ctxD.fillStyle='#a07bff'; ctxD.beginPath(); ctxD.moveTo(-w/2, h/2); ctxD.lineTo(w/2, h/2); ctxD.lineTo(0, -h/2); ctxD.closePath(); ctxD.fill(); }
+    else if (type==='steel'){ ctxD.fillStyle='#c0c0c0'; roundRect(ctxD, -w/2, -h/2, w, h, 0); ctxD.fill(); }
+    else if (type==='brick'){ ctxD.fillStyle='#c55a40'; roundRect(ctxD, -w/2, -h/2, w, h, 0); ctxD.fill(); ctxD.strokeStyle='#000'; ctxD.lineWidth=1; ctxD.strokeRect(-w/2, -h/2, w, h); }
+    ctxD.restore();
+}
+
+function tRand(n){ return Math.random()*n; }
+
+/* Input handling (Düzeltildi: PC sürükleme/tıklama ayrımı) */
+let mouse = {x:0,y:0,canvasX:0,canvasY:0}, mouseOnCanvas=false, hoverTile=null, touchMoved = false, isDraggingPC = false;
+
+// Mouse Wheel for Zoom (PC)
+canvas.addEventListener('wheel', e => { 
+    if (state.device.isMobile) return; 
+    e.preventDefault(); 
+    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1; 
+    state.zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, state.zoom * zoomFactor)); 
+});
+
+// Mouse Click/Drag for Pan (PC)
+canvas.addEventListener('mousedown', e => { 
+    if (state.device.isMobile) return; 
+    state.pan.active = true; 
+    state.pan.startX = e.clientX; 
+    state.pan.startY = e.clientY; 
+    isDraggingPC = false; // Tıklama başlangıcında sürükleme yok say
+});
+canvas.addEventListener('mouseup', () => { 
+    if (state.device.isMobile) return;
+    state.pan.active = false; 
+});
+canvas.addEventListener('mouseleave', () => { 
+    if (state.device.isMobile) return;
+    state.pan.active = false; 
+    mouseOnCanvas = false; 
+});
+
+canvas.addEventListener('mousemove', e => { 
+    const rect = canvas.getBoundingClientRect();
+    mouse.canvasX = e.clientX;
+    mouse.canvasY = e.clientY;
+
+    if (state.pan.active && !state.device.isMobile) { // PC Pan
+        const dx = e.clientX - state.pan.startX;
+        const dy = e.clientY - state.pan.startY;
+        state.pan.x += dx;
+        state.pan.y += dy;
+        state.pan.startX = e.clientX;
+        state.pan.startY = e.clientY;
+        // Eğer fare 3 pikselden fazla hareket ettiyse, sürükleme yapılıyor demektir
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) isDraggingPC = true;
+        mouseOnCanvas = false;
+        hoverTile = null;
+        tooltip.style.display = 'none';
+    } else { // Hover Hesaplama (PC & Mobil/Simüle)
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const gx = Math.floor(((mouseX - state.pan.x) / state.zoom - CONFIG.margin) / state.tile);
+        const gy = Math.floor(((mouseY - state.pan.y) / state.zoom - CONFIG.margin) / state.tile);
+        
+        if (gx>=0 && gy>=0 && gx<state.cols && gy<state.rows){
+            hoverTile = state.tiles[gy*state.cols + gx];
+        } else {
+            hoverTile = null;
+        }
+
+        mouse.x = mouseX;
+        mouse.y = mouseY;
+        mouseOnCanvas = true;
+    }
+});
+
+// Mouse Click for Placement/Harvest (PC)
+canvas.addEventListener('click', e => {
+    if (state.device.isMobile) return; // Sadece PC'de aktif
+    if (isDraggingPC) { 
+        isDraggingPC = false; // Sürükleme yapıldıysa tıklama işlemini iptal et ve bayrağı sıfırla
+        return; 
+    } 
+
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    
+    // Pan/Zoom'a göre ızgara hesaplama
+    const gx = Math.floor(((mouseX - state.pan.x) / state.zoom - CONFIG.margin) / state.tile);
+    const gy = Math.floor(((mouseY - state.pan.y) / state.zoom - CONFIG.margin) / state.tile);
+
+    if (gx>=0 && gy>=0 && gx<state.cols && gy<state.rows){
+        if (state.selected) {
+            placeBuilding(state.selected.spec, gx, gy);
+        } else {
+            // Harvest
+            const tile = state.tiles[gy*state.cols + gx];
+            if (tile.terrain === 'forest' && !tile.buildingId){
+                state.resources.wood += 5; spawnParticle(mouseX,mouseY,'#8b4513'); updateHUD();
+                tile.terrain = 'grass';
+            } else if (tile.terrain === 'rock' && !tile.buildingId){
+                state.resources.stone += 3; spawnParticle(mouseX,mouseY,'#6b6b6b'); updateHUD();
+                tile.terrain = 'grass';
+            }
+        }
+    } else {
+        state.selected = null; document.getElementById('info').textContent = 'Haritaya tıkla. R ile döndür, ESC ile iptal.';
+    }
+});
+
+// Touch/Mobile Input for Pan/Zoom
+canvas.addEventListener('touchstart', e => { 
+    if (!state.device.isMobile) return; 
+    touchMoved = false; 
+    if (e.touches.length === 1) { // Pan (Tek parmak)
+        state.pan.active = true;
+        state.pan.startX = e.touches[0].clientX;
+        state.pan.startY = e.touches[0].clientY;
+    } else if (e.touches.length === 2) { // Zoom (İki parmak / Pinch)
+        state.pan.active = false;
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        state.pinch.distance = Math.hypot(dx, dy);
+    }
+    e.preventDefault(); 
+});
+
+canvas.addEventListener('touchmove', e => { 
+    if (!state.device.isMobile) return; 
+    if (e.touches.length === 1 && state.pan.active) { // Pan
+        const dx = e.touches[0].clientX - state.pan.startX;
+        const dy = e.touches[0].clientY - state.pan.startY;
+        state.pan.x += dx;
+        state.pan.y += dy;
+        state.pan.startX = e.touches[0].clientX;
+        state.pan.startY = e.touches[0].clientY;
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) touchMoved = true; 
+        mouseOnCanvas = false; hoverTile = null; tooltip.style.display = 'none';
+    } else if (e.touches.length === 2) { // Zoom
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const newDistance = Math.hypot(dx, dy);
+        const scaleFactor = newDistance / state.pinch.distance;
+        state.zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, state.zoom * scaleFactor));
+        state.pinch.distance = newDistance;
+        touchMoved = true; 
+        mouseOnCanvas = false;
+    }
+    e.preventDefault(); 
+});
+
+// Dokunma (Tap) Yerleştirme/Hasat (Mobil)
+canvas.addEventListener('touchend', e => { 
+    if (!state.device.isMobile) return; 
+    state.pan.active = false;
+    
+    // Eğer parmak çok az hareket ettiyse (touchMoved false ise), bunu bir TIKLAMA (Tap) olarak kabul et.
+    if (!touchMoved && e.changedTouches.length === 1) { 
+        const t = e.changedTouches[0];
+        const rect = canvas.getBoundingClientRect();
+
+        const mouseX = t.clientX - rect.left;
+        const mouseY = t.clientY - rect.top;
+
+        const gx = Math.floor(((mouseX - state.pan.x) / state.zoom - CONFIG.margin) / state.tile);
+        const gy = Math.floor(((mouseY - state.pan.y) / state.zoom - CONFIG.margin) / state.tile);
+
+        if (gx>=0 && gy>=0 && gx<state.cols && gy<state.rows){
+            if (state.selected) {
+                placeBuilding(state.selected.spec, gx, gy);
+            } else {
+                // Harvest
+                const tile = state.tiles[gy*state.cols + gx];
+                if (tile.terrain === 'forest' && !tile.buildingId){
+                    state.resources.wood += 5; spawnParticle(mouseX,mouseY,'#8b4513'); updateHUD();
+                    tile.terrain = 'grass';
+                } else if (tile.terrain === 'rock' && !tile.buildingId){
+                    state.resources.stone += 3; spawnParticle(mouseX,mouseY,'#6b6b6b'); updateHUD();
+                    tile.terrain = 'grass';
+                }
+            }
+        } else {
+            state.selected = null; document.getElementById('info').textContent = 'Haritaya tıkla. R ile döndür, ESC ile iptal.';
+        }
+    }
+
+    touchMoved = false; 
+    mouseOnCanvas = false; 
+});
+
+window.addEventListener('keydown', e=>{
+    if (e.key.toLowerCase()==='r' && state.selected) state.selected.rotation = (state.selected.rotation+90)%360;
+    if (e.key === 'Escape') state.selected = null;
+    if (e.key === 'u'){
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = mouse.canvasX - rect.left;
+        const mouseY = mouse.canvasY - rect.top;
+        
+        const gx = Math.floor(((mouseX - state.pan.x) / state.zoom - CONFIG.margin) / state.tile);
+        const gy = Math.floor(((mouseY - state.pan.y) / state.zoom - CONFIG.margin) / state.tile);
+
+        if (gx>=0 && gy>=0 && gx<state.cols && gy<state.rows){
+            const tile = state.tiles[gy*state.cols + gx];
+            if (tile.buildingId){
+                const b = state.buildings.find(x=>x.id === tile.buildingId);
+                if (b){
+                    const cost = 50*b.level;
+                    if (state.money >= cost){
+                        state.money -= cost;
+                        b.level++;
+                        recomputeAll(); updateHUD();
+                        document.getElementById('info').textContent = `${b.spec.display} yükseltildi.`;
+                    } else alert('Yetersiz para');
+                }
+            }
+        }
+    }
+});
+
+/* Save/Load/Clear (Aynı) */
+document.getElementById('saveBtn').onclick = ()=>{ 
+    const save = { tiles: state.tiles.map(t=>t.buildingId), buildings: state.buildings, money: state.money, resources: state.resources, population: state.population, time: state.time, tasks: state.tasks, tasks_completed: state.tasks_completed };
+    localStorage.setItem('citySave', JSON.stringify(save)); 
+    document.getElementById('info').textContent = 'Oyun kaydedildi.';
+};
+document.getElementById('loadBtn').onclick = ()=>{ 
+    const save = JSON.parse(localStorage.getItem('citySave'));
+    if (!save) return alert('Kayıt bulunamadı.');
+    state.tiles.forEach((t,i)=>{ t.buildingId = save.tiles[i]; });
+    state.buildings = save.buildings; state.money = save.money; state.resources = save.resources; state.population = save.population; state.time = save.time; state.tasks = save.tasks; state.tasks_completed = save.tasks_completed;
+    recomputeAll(); updateHUD(); document.getElementById('info').textContent = 'Oyun yüklendi.';
+};
+document.getElementById('clearBtn').onclick = ()=>{ 
+    localStorage.removeItem('citySave'); 
+    localStorage.removeItem('deviceMode'); 
+    window.location.reload(); 
+};
+
+/* Overlay select (Aynı) */
+document.getElementById('overlaySelect').onchange = e=>{ state.overlay = e.target.value; };
+
+/* Main loops (Aynı) */
+function _initGame(){
+  adapt(); initTiles(); initPalette(); recomputeAll(); updateHUD();
+  addTask({ type:'build', target:'house', count:1, reward:50, desc:'1 Ev İnşa Et' }); 
+  // start tick
+  setInterval(()=>{ tick(); }, CONFIG.tickMs);
+  // spawn trucks periodically for logistics (demo)
+  setInterval(()=>{ autoSpawnTrucks(); }, 3000);
+  // update HUD periodically
+  setInterval(()=>{ updateHUD(); }, 800);
+  requestAnimationFrame(loop);
+}
+
+function loop(ts){
+  // update small systems
+  updateParticles(1/60); updateTrucks(1/60);
+  renderFrame(ts);
+  requestAnimationFrame(loop);
+}
+
+/* Auto-truck demo (Aynı) */
+function autoSpawnTrucks(){
+  const depots = state.buildings.filter(b=>b.type==='depot');
+  if (depots.length < 1) return;
+  const from = depots[Math.floor(Math.random()*depots.length)];
+  const others = state.buildings.filter(b=>b.id !== from.id);
+  if (!others.length) return;
+  const to = others[Math.floor(Math.random()*others.length)];
+  const fromPos = { x: from.pos.x + Math.floor(from.spec.footprint.w/2), y: from.pos.y + Math.floor(from.spec.footprint.h/2) };
+  const toPos = { x: to.pos.x + Math.floor(to.spec.footprint.w/2), y: to.pos.y + Math.floor(to.spec.footprint.h/2) };
+  spawnTruck(fromPos, toPos);
+}
+
+
+/* DEVICE SELECTION LOGIC (AYNI) */
+const gameContainer = document.querySelector('.app');
+const selectionOverlay = document.getElementById('device-selection-overlay');
+const pcBtn = document.getElementById('pc-btn');
+const mobileBtn = document.getElementById('mobile-btn');
+
+function selectDevice(isMobile) {
+    state.device.isMobile = isMobile;
+    localStorage.setItem('deviceMode', isMobile ? 'mobile' : 'pc');
+    
+    selectionOverlay.style.display = 'none';
+    gameContainer.style.display = 'flex'; // Ana oyunu göster
+    
+    // Orijinal oyun başlatma fonksiyonunu çağır
+    _initGame();
+}
+
+function checkDeviceSelection() {
+    const savedDevice = localStorage.getItem('deviceMode');
+    
+    if (savedDevice) {
+        // Kayıtlı bir seçim varsa, oyunu doğrudan başlat
+        state.device.isMobile = (savedDevice === 'mobile');
+        selectionOverlay.style.display = 'none';
+        gameContainer.style.display = 'flex';
+        _initGame();
+    } else {
+        // Seçim yapılmamışsa, overlay'i göster ve oyun alanını gizle
+        selectionOverlay.style.display = 'flex';
+        gameContainer.style.display = 'none';
+        
+        pcBtn.onclick = () => selectDevice(false);
+        mobileBtn.onclick = () => selectDevice(true);
+    }
+}
+
+// Orijinal "init()" çağrısı yerine yeni cihaz seçim kontrolünü başlat
+checkDeviceSelection();
+/* DEVICE SELECTION LOGIC (SON) */
+</script>
+</body>
+</html>
