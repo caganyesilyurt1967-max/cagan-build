@@ -186,7 +186,7 @@
 <script>
 /* Final Visuals — Single file
    - ... (Önceki düzeltmelerin tümü mevcuttur)
-   - **Düzeltme 4: Mobil dokunma/sürükleme ayrımı eşiği 10 pikselden 20 piksele yükseltildi.**
+   - **Düzeltme 5: Mobil dokunma/sürükleme ayrımı eşiği 20 pikselden 40 piksele yükseltildi.**
 */
 
 /* CONFIG */
@@ -1087,11 +1087,11 @@ function drawIcon(ctxD, cx, cy, type, w, h){
 
 function tRand(n){ return Math.random()*n; }
 
-/* Input handling (Düzeltildi: Mobil eşiği 20'ye yükseltildi) */
+/* Input handling (Düzeltildi: Mobil eşiği 40'a yükseltildi) */
 let mouse = {x:0,y:0,canvasX:0,canvasY:0}, mouseOnCanvas=false, hoverTile=null, touchMoved = false, isDraggingPC = false;
 // FIX: Mobil dokunma/sürükleme ayrımı için yeni değişkenler ve eşik
 let touchStartAbsX = 0, touchStartAbsY = 0; 
-const MOBILE_TAP_THRESHOLD = 20; // **DÜZELTME: Eşik 10'dan 20'ye çıkarıldı.**
+const MOBILE_TAP_THRESHOLD = 40; // **DÜZELTME: Eşik 20'den 40'a çıkarıldı.**
 
 // Mouse Wheel for Zoom (PC)
 canvas.addEventListener('wheel', e => { 
@@ -1245,7 +1245,7 @@ canvas.addEventListener('touchend', e => {
     const totalMoveY = Math.abs(t.clientY - touchStartAbsY);
     const totalMoveDistance = Math.hypot(totalMoveX, totalMoveY); 
 
-    // Eğer toplam hareket mesafesi yeni eşiği (20 piksel) aşmadıysa ve tek parmakla dokunma bittiyse (Tap)
+    // Eğer toplam hareket mesafesi yeni eşiği (40 piksel) aşmadıysa ve tek parmakla dokunma bittiyse (Tap)
     if (totalMoveDistance < MOBILE_TAP_THRESHOLD && e.changedTouches.length === 1) { 
         const rect = canvas.getBoundingClientRect();
         const mouseX = t.clientX - rect.left;
